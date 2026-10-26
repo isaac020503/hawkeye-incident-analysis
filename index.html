@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HawkEye Incident Analysis</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1b2330; --muted: #5b6676;
+    --line: #dfe3ea; --accent: #b3261e; --link: #0b5cad; --code: #eef1f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e131b; --card: #161d28; --text: #e6eaf0; --muted: #9aa5b5;
+      --line: #263041; --accent: #ff6b5e; --link: #6cb2ff; --code: #1d2634;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.9rem; margin: 0 0 4px; }
+  h2 { font-size: 1.2rem; margin: 0 0 12px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .badge { display: inline-block; background: var(--accent); color: #fff; font-weight: 600;
+           font-size: .8rem; padding: 2px 10px; border-radius: 99px; vertical-align: middle; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+          padding: 20px; margin-bottom: 16px; }
+  .btn { display: inline-block; background: var(--link); color: #fff; text-decoration: none;
+         padding: 10px 18px; border-radius: 8px; font-weight: 600; margin-right: 8px; }
+  .btn.alt { background: transparent; color: var(--link); border: 1px solid var(--link); }
+  ol.timeline { margin: 0; padding-left: 20px; }
+  ol.timeline li { margin-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  code { background: var(--code); padding: 1px 6px; border-radius: 4px; font-size: .85em;
+         word-break: break-all; }
+  a { color: var(--link); }
+  footer { color: var(--muted); font-size: .85rem; margin-top: 24px; }
+  .scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>HawkEye Stealer Infection <span class="badge">High severity</span></h1>
+  <p class="sub">SOC incident analysis of a network capture &middot; 10 April 2019 &middot; CyberDefenders HawkEye lab</p>
+
+  <div class="card">
+    <h2>Summary</h2>
+    <p>A workstation (<code>BEIJING-5CD1-PC</code>, 10.4.10.132) downloaded and ran a HawkEye Keylogger &ndash; Reborn v9 payload,
+       then emailed the user's saved browser and Outlook credentials to an attacker-controlled mailbox.
+       The capture shows the download, the malware's check-ins and the data theft. It does not show the original phishing email.</p>
+    <p>
+      <a class="btn" href="Incident%20Report%20HawkEye%20Stealer%20Infection.pdf">Read the full report (PDF)</a>
+      <a class="btn alt" href="detections.md">Detection rules</a>
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>What happened</h2>
+    <ol class="timeline">
+      <li><strong>+48 s</strong> &ndash; Host downloads <code>tkraw_Protected99.exe</code> (about 2 MB) from <code>proforma-invoices.com</code> over plain HTTP.</li>
+      <li><strong>+68 s</strong> &ndash; Malware looks up its public IP at <code>bot.whatismyipaddress.com</code>, then repeats every ~10 minutes.</li>
+      <li><strong>+69 s</strong> &ndash; Malware logs in to a mailbox on <code>macwinlogistics.in</code> (SMTP port 587) and sends a password dump.</li>
+      <li><strong>Every ~10 min</strong> &ndash; The same email is sent again (7 sessions in 64 minutes).</li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Indicators of compromise</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Type</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Domain</td><td><code>proforma-invoices.com</code></td></tr>
+        <tr><td>Domain</td><td><code>macwinlogistics.in</code></td></tr>
+        <tr><td>IP</td><td><code>217.182.138.150</code> (payload server)</td></tr>
+        <tr><td>IP</td><td><code>23.229.162.69</code> (SMTP exfiltration)</td></tr>
+        <tr><td>SHA-256</td><td><code>62099532750dad1054b127689680c38590033fa0bdfa4fb40c7b4dcb2607fb11</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>MITRE ATT&amp;CK</h2>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Tactic</th><th>Technique</th></tr></thead>
+      <tbody>
+        <tr><td>Execution</td><td>T1204 User Execution</td></tr>
+        <tr><td>Command and Control</td><td>T1105 Ingress Tool Transfer</td></tr>
+        <tr><td>Discovery</td><td>T1016 System Network Configuration Discovery</td></tr>
+        <tr><td>Credential Access</td><td>T1555.003 Credentials from Web Browsers; T1056.001 Keylogging</td></tr>
+        <tr><td>Exfiltration</td><td>T1048.003 Exfiltration Over Unencrypted Non-C2 Protocol</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Tools</h2>
+    <p>Wireshark for packet analysis. A small Python script, <code>tools/pcap_summary.py</code>, that summarises a capture and flags
+       executable downloads over HTTP and outbound SMTP from workstations.</p>
+  </div>
+
+  <footer>Educational analysis of a public training lab. No real victim data. Passwords seen in the capture are not reproduced here.</footer>
+</main>
+</body>
+</html>
